@@ -1,0 +1,54 @@
+services:
+  # frontend:
+  #   container_name: book_frontend
+  #   build:
+  #     context: ../books-frontend
+  #     dockerfile: ../books-frontend/Dockerfile
+  #   ports:
+  #     - "5173:5173"  # Vite default port
+  #   volumes:
+  #     - ../books-frontend:/app  # Mount project files for live reload
+  #   depends_on:
+  #     - backend
+  #   # restart: always
+  #   environment:
+  #     VITE_BACKEND_URL: backend:8000  # Adjust for backend URL
+  #   networks:
+  #     - books_network
+  db:
+    image: postgres:15
+    container_name: book_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - books_network
+  backend:
+    build:
+      context: ./
+      dockerfile: dockerfile
+    volumes:
+      - ./:/app
+    container_name: book_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    links:
+      - db
+    networks:
+      - books_network
+
+networks:
+  books_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
