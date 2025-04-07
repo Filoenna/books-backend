@@ -11,3 +11,4 @@ class Book(Base):
     author = Column(String)
     year = Column(Integer)
     genre = Column(String)
+    description = Column(String)

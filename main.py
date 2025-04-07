@@ -22,7 +22,7 @@ app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Vue dev server
+    allow_origins=["*"],  # Vue dev server
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -34,14 +34,13 @@ async def read_root():
     return {"Hello": "World"}
 
 
-@app.get("/books/")
+@app.get("/api/books")
 async def read_books(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(BookModel))
+    result = await db.execute(select(BookModel).order_by(BookModel.author))
     books = result.scalars().all()
     return books
 
-
-@app.get("/books/{book_id}", response_model=Book)
+@app.get("/api/books/{book_id}", response_model=Book)
 async def read_book(book_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(BookModel).where(BookModel.id == book_id))
     book = result.scalars().first()
@@ -49,11 +48,30 @@ async def read_book(book_id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Book not found")
     return book
 
-
-@app.post("/books/", response_model=Book, status_code=status.HTTP_201_CREATED)
+@app.post("/api/books", response_model=Book, status_code=status.HTTP_201_CREATED)
 async def create_book(book: BookCreate, db: AsyncSession = Depends(get_db)):
     new_book = BookModel(**book.model_dump())
     db.add(new_book)
     await db.commit()
     await db.refresh(new_book)
     return new_book
+
+@app.delete("/api/books/{book_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_book(book_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(BookModel).where(BookModel.id == book_id))
+    book = result.scalars().first()
+    if book is None:
+        raise HTTPException(status_code=404, detail="Book not found")
+    await db.delete(book)
+    await db.commit()
+
+@app.put("/api/books/{book_id}", status_code=status.HTTP_200_OK )
+async def update_book(book_id: int, book: BookCreate, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(BookModel).where(BookModel.id == book_id))
+    existing_book = result.scalars().first()
+    if existing_book is None:
+        raise HTTPException(status_code=404, detail="Book not found")
+    for key, value in book.model_dump().items():
+        setattr(existing_book, key, value)
+    await db.commit()
+    await db.refresh(existing_book)

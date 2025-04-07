@@ -6,6 +6,7 @@ class BookCreate(BaseModel):
     author: str
     year: int
     genre: str
+    description: str
 
 
 class Book(BookCreate):
