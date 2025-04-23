@@ -3,7 +3,7 @@ from sqlalchemy import select
 
 from fastapi import HTTPException
 from ..db.models import Book as BookModel
-from ..schemas.book import BookCreate
+from ..schemas.book import BookCreate, BookUpdate
 
 class BookService:
     def __init__(self, db: AsyncSession):
@@ -36,13 +36,27 @@ class BookService:
         await self.db.delete(book)
         await self.db.commit()
 
-    async def update_book(self, book_id: int, book_data: BookCreate) -> BookModel:
+    async def update_book(self, book_id: int, book_data: BookUpdate) -> BookModel:
         result = await self.db.execute(select(BookModel).where(BookModel.id == book_id))
-        existing_book = result.scalars().first()
-        if existing_book is None:
+        existing_book = result.scalar_one_or_none()
+        if not existing_book:
             raise HTTPException(status_code=404, detail="Book not found")
-        for key, value in book_data.model_dump().items():
+        update_data = book_data.dict(exclude_unset=True)
+        for key, value in update_data.items():
             setattr(existing_book, key, value)
         await self.db.commit()
         await self.db.refresh(existing_book)
         return existing_book
+        # async with self.session() as session:
+        #     async with session.begin():
+        #         query = select(BookModel).where(BookModel.id == book_id)
+        #         result = await session.execute(query)
+        #         book = result.scalars_one_or_none()
+        #         if not book:
+        #             raise HTTPException(status_code=404, detail="Book not found")
+        #         update_data = book_data.dict(exclude_unset=True)
+        #         for key, value in update_data.items():
+        #             setattr(book, key, value)
+        #         await session.flush()
+        #         await session.refresh(book)
+        #         return book

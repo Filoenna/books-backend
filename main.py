@@ -116,9 +116,18 @@
 #         raise HTTPException(status_code=500, detail=str(e))
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
+
 from app.db.session import get_db
 from app.api.v1 import router as api_v1_router
 
 app = FastAPI(title="Books API", version="1.0.0")
 app.include_router(api_v1_router, prefix="/api/v1", tags=["v1"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # Adjust this to your needs
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
