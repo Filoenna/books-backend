@@ -94,49 +94,6 @@
 # async def read_root():
 #     return {"Hello": "World"}
 
-# @app.get("/api/books")
-# async def read_books(db: AsyncSession = Depends(get_db)):
-#     result = await db.execute(select(BookModel).order_by(BookModel.author))
-#     books = result.scalars().all()
-#     return books
-
-# @app.get("/api/books/{book_id}", response_model=Book)
-# async def read_book(book_id: int, db: AsyncSession = Depends(get_db)):
-#     result = await db.execute(select(BookModel).where(BookModel.id == book_id))
-#     book = result.scalars().first()
-#     if book is None:
-#         raise HTTPException(status_code=404, detail="Book not found")
-#     return book
-
-# @app.post("/api/books", response_model=Book, status_code=status.HTTP_201_CREATED)
-# async def create_book(book: BookCreate, db: AsyncSession = Depends(get_db)):
-#     new_book = BookModel(**book.model_dump())
-#     print('New book!')
-#     db.add(new_book)
-#     await db.commit()
-#     await db.refresh(new_book)
-#     return new_book
-
-# @app.delete("/api/books/{book_id}", status_code=status.HTTP_204_NO_CONTENT)
-# async def delete_book(book_id: int, db: AsyncSession = Depends(get_db)):
-#     result = await db.execute(select(BookModel).where(BookModel.id == book_id))
-#     book = result.scalars().first()
-#     if book is None:
-#         raise HTTPException(status_code=404, detail="Book not found")
-#     await db.delete(book)
-#     await db.commit()
-
-# @app.put("/api/books/{book_id}", status_code=status.HTTP_200_OK )
-# async def update_book(book_id: int, book: BookCreate, db: AsyncSession = Depends(get_db)):
-#     result = await db.execute(select(BookModel).where(BookModel.id == book_id))
-#     existing_book = result.scalars().first()
-#     if existing_book is None:
-#         raise HTTPException(status_code=404, detail="Book not found")
-#     for key, value in book.model_dump().items():
-#         setattr(existing_book, key, value)
-#     await db.commit()
-#     await db.refresh(existing_book)
-
 # @app.post("/api/summarize")
 # def summarize_text(text: str):
 #     global api_calls, daily_tokens
@@ -161,16 +118,7 @@
 from fastapi import FastAPI
 from sqlalchemy import text
 from app.db.session import get_db
+from app.api.v1 import router as api_v1_router
 
-app = FastAPI()
-
-@app.get("/test-db")
-async def test_connection():
-    db = await anext(get_db())
-    try:
-        await db.execute(text("SELECT 1"))
-        return {"message": "Database connection is working!"}
-    except Exception as e:
-        return {"error": str(e)}
-    finally:
-        await db.close()
+app = FastAPI(title="Books API", version="1.0.0")
+app.include_router(api_v1_router, prefix="/api/v1", tags=["v1"])
