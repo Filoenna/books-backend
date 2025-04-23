@@ -47,16 +47,3 @@ class BookService:
         await self.db.commit()
         await self.db.refresh(existing_book)
         return existing_book
-        # async with self.session() as session:
-        #     async with session.begin():
-        #         query = select(BookModel).where(BookModel.id == book_id)
-        #         result = await session.execute(query)
-        #         book = result.scalars_one_or_none()
-        #         if not book:
-        #             raise HTTPException(status_code=404, detail="Book not found")
-        #         update_data = book_data.dict(exclude_unset=True)
-        #         for key, value in update_data.items():
-        #             setattr(book, key, value)
-        #         await session.flush()
-        #         await session.refresh(book)
-        #         return book
